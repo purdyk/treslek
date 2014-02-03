@@ -8,9 +8,10 @@ var async = require('async');
  */
 
 var DOGE = function () {
-    this.commands = ['doge', 'dc'];
+    this.commands = ['doge', 'btc', 'dc'];
     this.usage = {
         doge: 'ex : !doge . Gets market prices for DOGE',
+        btc: 'ex : !btc . Gets market prices for BTC',
         dc: 'ex : !dc <amount>. Convert DOGE to USD, default 1000'
     };
 };
@@ -31,8 +32,8 @@ var VICUREX = function (callback) {
         } else {
             try {
                 data = JSON.parse(body);
-                retObj.value = (1 / data.value).toPrecision(3);
-            } catch (err) {
+                retObj.value = Math.floor((1 / data.value) * 100000000);
+            } catch (exception) {
                 retObj.value = 'very confuse';
             }
         }
@@ -58,10 +59,10 @@ var COINEX = function (callback) {
                 data = JSON.parse(body);
                 data.trade_pairs.forEach(function(each) {
                     if (each.id === 46) {
-                        retObj.value = each.last_price / 100000000;
+                        retObj.value = each.last_price;
                     }
                 });
-            } catch (err) {
+            } catch (exception) {
                 retObj.value = 'very confuse';
             }
         }
@@ -84,8 +85,8 @@ var CRYPTSY = function (callback) {
         } else {
             try {
                 data = JSON.parse(body);
-                retObj.value = data.return.markets.DOGE.lasttradeprice;
-            } catch (err) {
+                retObj.value = data.return.markets.DOGE.lasttradeprice * 100000000;
+            } catch (exception) {
                 retObj.value = 'very confuse';
             }
         }
@@ -105,7 +106,7 @@ var MTGOX = function (callback) {
             try {
                 data = JSON.parse(body);
                 retObj.value = data.data.sell.value;
-            } catch (err) {
+            } catch (exception) {
                 retObj.value = 'very confuse';
             }
         }
@@ -125,7 +126,7 @@ var COINBASE = function (callback) {
             try {
                 data = JSON.parse(body);
                 retObj.value = data.amount;
-            } catch (err) {
+            } catch (exception) {
                 retObj.value = 'very confuse';
             }
         }
@@ -139,10 +140,23 @@ var COINBASE = function (callback) {
 
 DOGE.prototype.doge = function (bot, to, from, msg, callback) {
     var msgOut = '';
-    async.parallel([CRYPTSY, COINEX, VICUREX, COINBASE], function(err, results) {
+    async.parallel([CRYPTSY, COINEX, VICUREX], function(err, results) {
         msgOut += "DOGE: ";
         results.forEach(function (each) {
-            msgOut += each.label + ": " + each.value + " "
+            msgOut += each.label + ": " + each.value + " ";
+        });
+
+        bot.say(to, msgOut);
+        callback();
+    });
+};
+
+DOGE.prototype.btc = function (bot, to, from, msg, callback) {
+    var msgOut = '';
+    async.parallel([MTGOX, COINBASE], function(err, results) {
+        msgOut += "BTC: ";
+        results.forEach(function (each) {
+            msgOut += each.label + ": " + each.value + " ";
         });
 
         bot.say(to, msgOut);
@@ -154,9 +168,9 @@ DOGE.prototype.dc = function (bot, to, from, msg, callback)
 {
     var msgOut = '',
         amount = 1000,
-        raw = msg.replace(',','');
+        raw = msg.replace(',', '');
 
-    if (!(raw === '') && !isNaN(raw))
+    if ((raw !== '') && !isNaN(raw))
     {
         amount = parseFloat(raw);
     }
@@ -165,7 +179,7 @@ DOGE.prototype.dc = function (bot, to, from, msg, callback)
         if (isNaN(results[0].value)) {
             msgOut = 'Cannot do conversion at this moment.';
         } else {
-            msgOut = amount + ' DOGE is $' + ((amount * results[0].value) * results[1].value).toPrecision(5);
+            msgOut = 'Đ' + amount + ' is $' + ((amount * results[0].value) * results[1].value / 100000000).toFixed(2);
         }
         bot.say(to, msgOut);
         callback();
