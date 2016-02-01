@@ -70,6 +70,12 @@ var PROVIDERS = {
       return data.amount;
     }
   },
+  Bter: {
+    url: 'http://data.bter.com/api/1/ticker/doge_btc',
+    valueFunction: function(data) {
+      return data.sell;
+    }
+  },
   'Vault of Satoshi': {
     url: 'https://api.vaultofsatoshi.com/public/ticker?order_currency=DOGE&payment_currency=USD',
     valueFunction: function(data) {
@@ -95,6 +101,7 @@ DOGE.prototype.doge = function (bot, to, from, msg, callback) {
       providers = [];
 
   providers = [
+    'Bter',
     'Cryptsy',
     'CoinEx',
     'Vicurex',
